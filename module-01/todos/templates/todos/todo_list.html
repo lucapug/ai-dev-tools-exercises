@@ -1,0 +1,156 @@
+{% extends 'todos/base.html' %}
+
+{% block title %}TODO List - TODO App{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .todo-section {
+        margin-bottom: 30px;
+    }
+    
+    .todo-item {
+        background: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #667eea;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .todo-item.completed {
+        border-left-color: #27ae60;
+        opacity: 0.7;
+    }
+    
+    .todo-content {
+        flex: 1;
+    }
+    
+    .todo-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    
+    .todo-item.completed .todo-title {
+        text-decoration: line-through;
+        color: #666;
+    }
+    
+    .todo-meta {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .todo-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .todo-actions a, .todo-actions form {
+        margin: 0;
+    }
+    
+    .todo-actions button {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+    
+    .due-date {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
+    .due-date.past {
+        color: #c0392b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <h2>My TODOs</h2>
+    <a href="{% url 'todo-create' %}" class="btn">➕ Add New TODO</a>
+</div>
+
+<!-- Incomplete TODOs -->
+<div class="todo-section">
+    <h3>📌 To Do ({{ incomplete_todos.count }})</h3>
+    {% if incomplete_todos %}
+        {% for todo in incomplete_todos %}
+        <div class="todo-item">
+            <div class="todo-content">
+                <div class="todo-title">{{ todo.title }}</div>
+                <div class="todo-meta">
+                    {% if todo.description %}
+                        <p>{{ todo.description|truncatewords:20 }}</p>
+                    {% endif %}
+                    {% if todo.due_date %}
+                        <span class="due-date">📅 Due: {{ todo.due_date|date:"M d, Y" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="todo-actions">
+                <form method="post" action="{% url 'todo-toggle' todo.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">✓ Complete</button>
+                </form>
+                <a href="{% url 'todo-update' todo.pk %}" class="btn">✏️ Edit</a>
+                <a href="{% url 'todo-delete' todo.pk %}" class="btn btn-danger">🗑️ Delete</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>🎉 No pending tasks! You're all caught up!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Completed TODOs -->
+<div class="todo-section">
+    <h3>✅ Completed ({{ completed_todos.count }})</h3>
+    {% if completed_todos %}
+        {% for todo in completed_todos %}
+        <div class="todo-item completed">
+            <div class="todo-content">
+                <div class="todo-title">{{ todo.title }}</div>
+                <div class="todo-meta">
+                    {% if todo.description %}
+                        <p>{{ todo.description|truncatewords:20 }}</p>
+                    {% endif %}
+                    <span>Completed on: {{ todo.updated_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+            <div class="todo-actions">
+                <form method="post" action="{% url 'todo-toggle' todo.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn">↩️ Reopen</button>
+                </form>
+                <a href="{% url 'todo-delete' todo.pk %}" class="btn btn-danger">🗑️ Delete</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No completed tasks yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
