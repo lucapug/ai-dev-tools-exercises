@@ -1,0 +1,7 @@
+# uv
+.venv/
+uv.lock
+
+# local data / outputs
+data/
+outputs/
