@@ -19,15 +19,57 @@ function InterviewRoom() {
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
+    // Early exit if sessionId is not available
+    if (!sessionId) {
+      console.error('No sessionId provided');
+      setError('Invalid session ID');
+      setLoading(false);
+      return;
+    }
+
+    let timeoutId = null;
+    let isSessionLoaded = false;
+
+    console.log('Initializing InterviewRoom with sessionId:', sessionId);
+
     // Initialize socket connection
-    const newSocket = io(API_URL);
+    const newSocket = io(API_URL, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5
+    });
     setSocket(newSocket);
 
-    // Join the session
-    newSocket.emit('join-session', sessionId);
+    // Connection event handlers
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+      console.log('Emitting join-session for sessionId:', sessionId);
+      // Join the session after successful connection
+      newSocket.emit('join-session', sessionId);
+
+      // Set timeout only after emitting join-session
+      timeoutId = setTimeout(() => {
+        if (!isSessionLoaded) {
+          console.error('Session loading timeout after 10 seconds');
+          setError('Session loading timeout. Please try again.');
+          setLoading(false);
+        }
+      }, 10000);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+      if (timeoutId) clearTimeout(timeoutId);
+      setError('Failed to connect to server. Please check if the backend is running.');
+      setLoading(false);
+    });
 
     // Listen for session joined event
     newSocket.on('session-joined', (data) => {
+      console.log('Session joined successfully:', data);
+      isSessionLoaded = true;
+      if (timeoutId) clearTimeout(timeoutId);
       setCode(data.code);
       setLanguage(data.language);
       setParticipantCount(data.participantCount);
@@ -36,6 +78,9 @@ function InterviewRoom() {
 
     // Listen for session error
     newSocket.on('session-error', (errorMsg) => {
+      console.error('Session error:', errorMsg);
+      isSessionLoaded = true;
+      if (timeoutId) clearTimeout(timeoutId);
       setError(errorMsg);
       setLoading(false);
     });
@@ -57,6 +102,8 @@ function InterviewRoom() {
 
     // Cleanup on unmount
     return () => {
+      console.log('Cleaning up InterviewRoom');
+      if (timeoutId) clearTimeout(timeoutId);
       newSocket.disconnect();
     };
   }, [sessionId]);
