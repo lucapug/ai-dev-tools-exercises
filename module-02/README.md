@@ -230,6 +230,102 @@ FRONTEND_URL=http://localhost:5173
 
 This platform is production-ready for JavaScript interviews and can be extended with additional features like video chat, whiteboarding, or backend code execution services for other languages!
 
+## Running the Tests
+
+### Install Dependencies
+
+**Backend:**
+```bash
+cd backend
+npm install
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+```
+
+For frontend, ensure all testing dependencies are installed:
+```bash
+npm install --save-dev @babel/preset-env @babel/preset-react babel-jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom identity-obj-proxy
+```
+
+### Run Backend Tests
+
+```bash
+cd backend
+npm test                 # Run all tests
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage report
+```
+
+### Run Frontend Tests
+
+```bash
+cd frontend
+npm test                 # Run all tests
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage report
+```
+
+### Run All Tests
+
+Create a root `package.json` in the `module-02` directory:
+
+```json
+{
+  "name": "coding-interview-platform",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:all": "npm run test:backend && npm run test:frontend"
+  }
+}
+```
+
+Then run:
+```bash
+npm test
+```
+
+### Test Coverage
+
+The integration tests cover:
+
+✅ **REST API Endpoints**
+- Creating sessions
+- Retrieving session data
+- Error handling for non-existent sessions
+
+✅ **WebSocket Communication**
+- Client connection and disconnection
+- Joining sessions
+- Real-time code synchronization
+- Language changes
+- Cursor position updates
+- Participant count updates
+
+✅ **Multi-Client Scenarios**
+- Multiple clients in same session
+- Session isolation between different sessions
+- Broadcast vs. targeted messages
+- Sequential updates
+
+✅ **Frontend Components**
+- Session creation flow
+- Joining interview rooms
+- Code editing and synchronization
+- Running code and displaying output
+- Error handling and edge cases
+
+✅ **End-to-End Flows**
+- Complete user journey from creation to execution
+
+These tests ensure that the client-server integration works correctly and all real-time features function as expected!
+
 ## Limitations & Future Enhancements
 
 ### Current Limitations
