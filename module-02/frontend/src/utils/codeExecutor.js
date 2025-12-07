@@ -10,41 +10,54 @@ export async function initializePyodide() {
   }
 
   try {
-    // Load Pyodide from CDN (use exact version that works)
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js';
-    script.async = true;
-    document.head.appendChild(script);
+    // Check if already loading
+    if (window.pyodideLoadingPromise) {
+      return await window.pyodideLoadingPromise;
+    }
 
-    // Wait for Pyodide to be available
-    await new Promise((resolve, reject) => {
-      script.onload = () => {
-        // Give it time to initialize
-        setTimeout(() => {
+    // Create loading promise to avoid multiple loads
+    window.pyodideLoadingPromise = (async () => {
+      // Load Pyodide from CDN
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js';
+      script.async = true;
+      document.head.appendChild(script);
+
+      // Wait for Pyodide to be available
+      return new Promise((resolve, reject) => {
+        const checkPyodide = setInterval(() => {
           if (window.loadPyodide) {
-            resolve();
-          } else {
-            reject(new Error('Pyodide script loaded but loadPyodide not available'));
+            clearInterval(checkPyodide);
+            
+            // Initialize Pyodide
+            window.loadPyodide({
+              indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
+            }).then(pyodide => {
+              pyodideInstance = pyodide;
+              isPyodideReady = true;
+              resolve(pyodide);
+            }).catch(reject);
           }
-        }, 500);
-      };
-      script.onerror = () => reject(new Error('Failed to load Pyodide script from CDN'));
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        if (!isPyodideReady) {
-          reject(new Error('Pyodide loading timeout'));
-        }
-      }, 10000);
-    });
+        }, 100);
 
-    pyodideInstance = await window.loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
-    });
-    isPyodideReady = true;
+        // Timeout after 15 seconds
+        setTimeout(() => {
+          clearInterval(checkPyodide);
+          reject(new Error('Pyodide loading timeout - took too long to initialize'));
+        }, 15000);
+
+        script.onerror = () => {
+          clearInterval(checkPyodide);
+          reject(new Error('Failed to load Pyodide script from CDN'));
+        };
+      });
+    })();
+
+    pyodideInstance = await window.pyodideLoadingPromise;
     return pyodideInstance;
   } catch (error) {
     console.error('Failed to initialize Pyodide:', error);
+    window.pyodideLoadingPromise = null;
     throw new Error('Failed to initialize Python runtime: ' + error.message);
   }
 }
