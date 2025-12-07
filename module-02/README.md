@@ -6,6 +6,7 @@ A real-time collaborative coding platform designed for conducting technical job 
 
 ```
 module-02/
+├── package.json                # Root package with concurrently setup
 ├── backend/                    # Express.js backend server
 │   ├── package.json           # Backend dependencies and scripts
 │   ├── server.js              # Main server and Socket.IO configuration
@@ -24,7 +25,7 @@ module-02/
         │   ├── CodeEditor.jsx     # Monaco code editor component
         │   └── OutputPanel.jsx    # Code execution output display
         └── utils/
-            └── codeExecutor.js    # Code execution utilities (unused - logic in InterviewRoom)
+            └── codeExecutor.js    # Code execution via WASM (JavaScript, TypeScript, Python)
 ```
 
 ## Technology Stack
@@ -41,6 +42,7 @@ module-02/
 - **React Router DOM** - Client-side routing
 - **Socket.IO Client** - Real-time communication client
 - **Monaco Editor** - VS Code's code editor component
+- **Pyodide** - Python WASM runtime for in-browser Python execution
 
 ## Architecture & Components
 
@@ -111,6 +113,14 @@ Code execution output display featuring:
 - **Multiple Outputs**: Displays all console logs and errors
 - **Styled Messages**: Color-coded by message type
 
+#### [`codeExecutor.js`](frontend/src/utils/codeExecutor.js)
+Code execution utility providing secure WASM-based execution:
+- **JavaScript**: Direct execution with custom console capture
+- **TypeScript**: Executed as JavaScript
+- **Python**: WASM execution via Pyodide (lazy initialization on first use)
+- **Output Capture**: Captures console.log, console.error, console.warn, console.info
+- **Security**: All execution in-browser, no server code execution
+
 ## Features
 
 ### Real-Time Collaboration
@@ -127,10 +137,11 @@ Code execution output display featuring:
 - Word wrap and automatic layout
 
 ### Code Execution
-- In-browser execution for JavaScript/TypeScript
+- In-browser execution for **JavaScript/TypeScript** (direct execution)
+- In-browser execution for **Python** via Pyodide WebAssembly
 - Captures console.log, console.error, console.warn, console.info
 - Error handling and runtime error display
-- Simulated execution for other languages (Python, Java, C++)
+- Zero server-side code execution (secure by design)
 
 ### Session Management
 - Unique session IDs generated with nanoid
@@ -141,49 +152,73 @@ Code execution output display featuring:
 ## Setup and Running Instructions
 
 ### Prerequisites
-- **Node.js** (v18 or higher recommended)
-- **npm** or yarn package manager
+- **Node.js** (v18 or higher)
+- **npm** or yarn
 
-### 1. Install Dependencies
+### Quick Start (Concurrent Mode)
+
+From the `module-02` root directory:
+
+```bash
+# Install all dependencies
+npm run install:all
+
+# Run both backend and frontend simultaneously
+npm run dev
+```
+
+This starts:
+- **Backend**: http://localhost:3000
+- **Frontend**: http://localhost:5173
+
+Press **Ctrl+C** to stop both services.
+
+### Alternative: Run Separately
 
 **Backend:**
 ```bash
 cd backend
 npm install
+npm run dev        # Auto-reload mode
+# or: npm start   # Production mode
+```
+
+**Frontend (in another terminal):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Available Commands
+
+**Root Level** (`module-02/`):
+```bash
+npm run dev              # Start backend + frontend concurrently
+npm run dev:backend      # Backend only
+npm run dev:frontend     # Frontend only
+npm run install:all      # Install all dependencies
+npm test                 # Run all tests
+```
+
+**Backend:**
+```bash
+npm run dev              # Watch mode
+npm start                # Production
+npm test                 # Run tests
+npm run test:watch       # Watch tests
+npm run test:coverage    # Coverage report
 ```
 
 **Frontend:**
 ```bash
-cd frontend
-npm install
+npm run dev              # Development server
+npm run build            # Build for production
+npm run preview          # Preview production build
+npm test                 # Run tests
+npm run test:watch       # Watch tests
+npm run test:coverage    # Coverage report
 ```
-
-### 2. Run the Application
-
-You need to run both backend and frontend in separate terminals.
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm start
-```
-The backend server will start on **http://localhost:3000**
-
-> **Development Mode**: For auto-reload during development, use:
-> ```bash
-> npm run dev
-> ```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-The frontend development server will start on **http://localhost:5173**
-
-### 3. Access the Application
-
-Open your browser and navigate to: **http://localhost:5173**
 
 ### Environment Variables (Optional)
 
@@ -202,149 +237,92 @@ FRONTEND_URL=http://localhost:5173
 
 ## Features Implemented
 
-✅ **Create and Share Links**: Generate unique session links to share with candidates
-✅ **Real-time Collaboration**: Multiple users can edit code simultaneously with instant updates
-✅ **Syntax Highlighting**: Monaco Editor (VS Code) with support for multiple languages
-✅ **Code Execution**: Safe in-browser JavaScript execution with console output capture
-✅ **Language Support**: JavaScript, TypeScript, Python, Java, C++
-✅ **Participant Count**: Shows number of active users in the session
-✅ **Professional UI**: Modern, responsive design with dark theme
-✅ **Session Persistence**: Sessions persist as long as there are active participants
+✅ **Create and Share Links**: Generate unique session IDs for easy sharing
+✅ **Real-time Collaboration**: Multiple users edit code simultaneously
+✅ **Syntax Highlighting**: Monaco Editor (VS Code) with multiple languages
+✅ **JavaScript Execution**: Safe in-browser execution with console capture
+✅ **Python Execution**: WASM-based Python via Pyodide (secure, no server code execution)
+✅ **TypeScript Support**: Executed as JavaScript in browser
+✅ **Language Selector**: Switch between JavaScript, TypeScript, Python, Java, C++
+✅ **Participant Count**: Real-time user count in each session
+✅ **Professional UI**: Dark theme, responsive design
+✅ **Session Persistence**: Sessions last until all participants disconnect
+✅ **Concurrent Execution**: Run backend + frontend simultaneously with `npm run dev`
 
 ## Architecture Highlights
 
 - **WebSocket Communication**: Socket.IO for real-time bidirectional updates
-- **Monaco Editor**: Same editor that powers VS Code
-- **Session Management**: In-memory session storage with automatic cleanup
-- **Safe Execution**: Sandboxed JavaScript execution in the browser
-- **Responsive Design**: Works on desktop and mobile devices
+- **Monaco Editor**: Professional code editor (VS Code)
+- **Session Management**: In-memory storage with auto-cleanup after 1 hour
+- **Safe Execution**: 
+  - JavaScript/TypeScript: Browser sandbox
+  - Python: WASM via Pyodide (no server execution)
+- **Responsive Design**: Works on desktop and mobile
+- **Concurrent Development**: Both services start together with one command
 
 ## Usage Flow
 
-1. **Interviewer**: Open the application at http://localhost:5173 and click "Create New Session"
-2. **Share**: Copy the generated session link
-3. **Candidate**: Open the shared link to join the session
-4. **Collaborate**: Both parties can now edit code in real-time
-5. **Execute**: Click "Run Code" to execute JavaScript/TypeScript
-6. **Review**: See output in the output panel
-
-This platform is production-ready for JavaScript interviews and can be extended with additional features like video chat, whiteboarding, or backend code execution services for other languages!
+1. **Start**: Run `npm run dev` from `module-02/`
+2. **Interviewer**: Open http://localhost:5173 → Create Session
+3. **Share**: Copy the session link
+4. **Candidate**: Open the link to join
+5. **Code**: Both edit in real-time
+6. **Execute**: Click Run Code to execute JavaScript/Python
+7. **Output**: Results shown in output panel
 
 ## Running the Tests
 
-### Install Dependencies
+### Quick Start
+
+From `module-02/` root:
+```bash
+npm test
+```
+
+### Individual Test Commands
 
 **Backend:**
 ```bash
 cd backend
-npm install
+npm test                 # Run tests once
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage
 ```
 
 **Frontend:**
 ```bash
 cd frontend
-npm install
-```
-
-For frontend, ensure all testing dependencies are installed:
-```bash
-npm install --save-dev @babel/preset-env @babel/preset-react babel-jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom identity-obj-proxy
-```
-
-### Run Backend Tests
-
-```bash
-cd backend
-npm test                 # Run all tests
-npm run test:watch       # Watch mode
-npm run test:coverage    # With coverage report
-```
-
-### Run Frontend Tests
-
-```bash
-cd frontend
-npm test                 # Run all tests
-npm run test:watch       # Watch mode
-npm run test:coverage    # With coverage report
-```
-
-### Run All Tests
-
-Create a root `package.json` in the `module-02` directory:
-
-```json
-{
-  "name": "coding-interview-platform",
-  "private": true,
-  "scripts": {
-    "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd backend && npm test",
-    "test:frontend": "cd frontend && npm test",
-    "test:all": "npm run test:backend && npm run test:frontend"
-  }
-}
-```
-
-Then run:
-```bash
 npm test
+npm run test:watch
+npm run test:coverage
 ```
 
 ### Test Coverage
 
-The integration tests cover:
-
-✅ **REST API Endpoints**
-- Creating sessions
-- Retrieving session data
-- Error handling for non-existent sessions
-
-✅ **WebSocket Communication**
-- Client connection and disconnection
-- Joining sessions
-- Real-time code synchronization
-- Language changes
-- Cursor position updates
-- Participant count updates
-
-✅ **Multi-Client Scenarios**
-- Multiple clients in same session
-- Session isolation between different sessions
-- Broadcast vs. targeted messages
-- Sequential updates
-
-✅ **Frontend Components**
-- Session creation flow
-- Joining interview rooms
-- Code editing and synchronization
-- Running code and displaying output
-- Error handling and edge cases
-
-✅ **End-to-End Flows**
-- Complete user journey from creation to execution
-
-These tests ensure that the client-server integration works correctly and all real-time features function as expected!
+- ✅ REST API endpoints (session creation, retrieval)
+- ✅ WebSocket events (join, code sync, language change)
+- ✅ Multi-client scenarios
+- ✅ Real-time synchronization
+- ✅ Session management and cleanup
 
 ## Limitations & Future Enhancements
 
 ### Current Limitations
-- Code execution limited to JavaScript/TypeScript in browser
-- In-memory session storage (lost on server restart)
-- No authentication or authorization
-- No session history or code persistence
-- No video/audio communication
+- Python first load has initial WASM overhead (subsequent runs are fast)
+- Java and C++ not yet supported (require additional sandboxes)
+- In-memory session storage (lost on restart)
+- No authentication or user persistence
+- No session recording or code history
 
 ### Potential Enhancements
-- Backend code execution service for all languages (Docker containers, sandboxed environments)
-- Database persistence (MongoDB, PostgreSQL)
-- User authentication and role management (interviewer vs. candidate)
-- Session recording and playback
-- Video/audio integration
+- Persist sessions to database
+- User authentication and roles
+- Code history and session playback
+- Video/audio chat integration
+- More language support (Java, C++, Go, Rust)
+- Session recording and analytics
 - Code review and annotation tools
-- Multiple file support
-- Test case management
-- Interview feedback system
+- Collaborative features (cursors, selections)
 
 ## Security Considerations
 
