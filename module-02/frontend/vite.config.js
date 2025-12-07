@@ -7,8 +7,6 @@ export default defineConfig({
     port: 5173
   },
   optimizeDeps: {
-    esbuildOptions: {
-      external: ['node-fetch']
-    }
+    exclude: ['pyodide']
   }
 });

@@ -1,5 +1,3 @@
-import * as Pyodide from 'pyodide';
-
 let pyodideInstance = null;
 let isPyodideReady = false;
 
@@ -12,7 +10,26 @@ export async function initializePyodide() {
   }
 
   try {
-    pyodideInstance = await Pyodide.loadPyodide();
+    // Load Pyodide from CDN
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js';
+    document.head.appendChild(script);
+
+    // Wait for Pyodide to be available
+    await new Promise((resolve, reject) => {
+      script.onload = () => {
+        setTimeout(() => {
+          if (window.loadPyodide) {
+            resolve();
+          } else {
+            reject(new Error('Pyodide failed to load'));
+          }
+        }, 100);
+      };
+      script.onerror = () => reject(new Error('Failed to load Pyodide script'));
+    });
+
+    pyodideInstance = await window.loadPyodide();
     isPyodideReady = true;
     return pyodideInstance;
   } catch (error) {
