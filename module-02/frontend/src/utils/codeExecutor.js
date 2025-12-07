@@ -90,11 +90,18 @@ async function executePython(code) {
   const output = [];
 
   try {
-    // Initialize Pyodide if not already done
-    const pyodide = await initializePyodide();
+    // Save original window.print to prevent accidental prints
+    const originalPrint = window.print;
+    window.print = () => {
+      console.warn('Print function blocked during code execution');
+    };
 
-    // Capture stdout/stderr
-    pyodide.runPython(`
+    try {
+      // Initialize Pyodide if not already done
+      const pyodide = await initializePyodide();
+
+      // Capture stdout/stderr
+      pyodide.runPython(`
 import sys
 from io import StringIO
 
@@ -104,43 +111,47 @@ sys.stdout = _stdout
 sys.stderr = _stderr
 `);
 
-    try {
-      // Execute user code
-      pyodide.runPython(code);
+      try {
+        // Execute user code
+        pyodide.runPython(code);
 
-      // Get captured output
-      const stdout = pyodide.runPython('_stdout.getvalue()');
-      const stderr = pyodide.runPython('_stderr.getvalue()');
+        // Get captured output
+        const stdout = pyodide.runPython('_stdout.getvalue()');
+        const stderr = pyodide.runPython('_stderr.getvalue()');
 
-      // Reset stdout/stderr
-      pyodide.runPython(`
+        // Reset stdout/stderr
+        pyodide.runPython(`
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__
 `);
 
-      // Add stdout output
-      if (stdout.trim()) {
-        stdout.split('\n').forEach(line => {
-          if (line.trim()) {
-            output.push({ type: 'success', message: line });
-          }
-        });
-      }
+        // Add stdout output
+        if (stdout.trim()) {
+          stdout.split('\n').forEach(line => {
+            if (line.trim()) {
+              output.push({ type: 'success', message: line });
+            }
+          });
+        }
 
-      // Add stderr output
-      if (stderr.trim()) {
-        stderr.split('\n').forEach(line => {
-          if (line.trim()) {
-            output.push({ type: 'error', message: line });
-          }
-        });
-      }
+        // Add stderr output
+        if (stderr.trim()) {
+          stderr.split('\n').forEach(line => {
+            if (line.trim()) {
+              output.push({ type: 'error', message: line });
+            }
+          });
+        }
 
-      if (!stdout.trim() && !stderr.trim()) {
-        output.push({ type: 'info', message: 'Code executed successfully (no output)' });
+        if (!stdout.trim() && !stderr.trim()) {
+          output.push({ type: 'info', message: 'Code executed successfully (no output)' });
+        }
+      } catch (error) {
+        output.push({ type: 'error', message: `Python Runtime Error: ${error.message}` });
       }
-    } catch (error) {
-      output.push({ type: 'error', message: `Python Runtime Error: ${error.message}` });
+    } finally {
+      // Restore original window.print
+      window.print = originalPrint;
     }
   } catch (error) {
     output.push({ type: 'error', message: `Failed to execute Python: ${error.message}` });
