@@ -10,26 +10,37 @@ export async function initializePyodide() {
   }
 
   try {
-    // Load Pyodide from CDN
+    // Load Pyodide from CDN (use exact version that works)
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js';
+    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js';
+    script.async = true;
     document.head.appendChild(script);
 
     // Wait for Pyodide to be available
     await new Promise((resolve, reject) => {
       script.onload = () => {
+        // Give it time to initialize
         setTimeout(() => {
           if (window.loadPyodide) {
             resolve();
           } else {
-            reject(new Error('Pyodide failed to load'));
+            reject(new Error('Pyodide script loaded but loadPyodide not available'));
           }
-        }, 100);
+        }, 500);
       };
-      script.onerror = () => reject(new Error('Failed to load Pyodide script'));
+      script.onerror = () => reject(new Error('Failed to load Pyodide script from CDN'));
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!isPyodideReady) {
+          reject(new Error('Pyodide loading timeout'));
+        }
+      }, 10000);
     });
 
-    pyodideInstance = await window.loadPyodide();
+    pyodideInstance = await window.loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
+    });
     isPyodideReady = true;
     return pyodideInstance;
   } catch (error) {
@@ -45,6 +56,12 @@ function executeJavaScript(code) {
   const output = [];
   const logs = [];
   const errors = [];
+
+  // Save original window.print to prevent accidental prints
+  const originalPrint = window.print;
+  window.print = () => {
+    console.warn('Print function blocked during code execution');
+  };
 
   const customConsole = {
     log: (...args) => {
@@ -78,6 +95,9 @@ function executeJavaScript(code) {
     }
   } catch (error) {
     output.push({ type: 'error', message: `Runtime Error: ${error.message}` });
+  } finally {
+    // Restore original window.print
+    window.print = originalPrint;
   }
 
   return output;
