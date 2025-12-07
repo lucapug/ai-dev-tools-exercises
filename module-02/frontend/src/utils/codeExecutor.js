@@ -17,40 +17,25 @@ export async function initializePyodide() {
 
     // Create loading promise to avoid multiple loads
     window.pyodideLoadingPromise = (async () => {
-      // Load Pyodide from CDN
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js';
-      script.async = true;
-      document.head.appendChild(script);
-
-      // Wait for Pyodide to be available
-      return new Promise((resolve, reject) => {
-        const checkPyodide = setInterval(() => {
-          if (window.loadPyodide) {
-            clearInterval(checkPyodide);
-            
-            // Initialize Pyodide
-            window.loadPyodide({
-              indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
-            }).then(pyodide => {
-              pyodideInstance = pyodide;
-              isPyodideReady = true;
-              resolve(pyodide);
-            }).catch(reject);
-          }
-        }, 100);
-
-        // Timeout after 15 seconds
-        setTimeout(() => {
-          clearInterval(checkPyodide);
-          reject(new Error('Pyodide loading timeout - took too long to initialize'));
-        }, 15000);
-
-        script.onerror = () => {
-          clearInterval(checkPyodide);
-          reject(new Error('Failed to load Pyodide script from CDN'));
-        };
-      });
+      try {
+        console.log('Starting Pyodide initialization...');
+        
+        // Dynamically import Pyodide using ESM
+        const pyodideModule = await import('https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.mjs');
+        console.log('Pyodide module loaded');
+        
+        const pyodide = await pyodideModule.loadPyodide({
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'
+        });
+        
+        console.log('Pyodide initialized successfully');
+        pyodideInstance = pyodide;
+        isPyodideReady = true;
+        return pyodide;
+      } catch (error) {
+        console.error('Pyodide initialization error:', error);
+        throw error;
+      }
     })();
 
     pyodideInstance = await window.pyodideLoadingPromise;
