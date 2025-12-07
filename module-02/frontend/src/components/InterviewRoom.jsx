@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import CodeEditor from './CodeEditor';
 import OutputPanel from './OutputPanel';
+import { executeCode } from '../utils/codeExecutor';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -194,59 +195,6 @@ function InterviewRoom() {
   );
 }
 
-// Simple in-browser code execution
-async function executeCode(code, language) {
-  const output = [];
-
-  try {
-    if (language === 'javascript' || language === 'typescript') {
-      // Create a safe execution context
-      const logs = [];
-      const errors = [];
-
-      // Override console methods
-      const customConsole = {
-        log: (...args) => logs.push(args.map(arg => String(arg)).join(' ')),
-        error: (...args) => errors.push(args.map(arg => String(arg)).join(' ')),
-        warn: (...args) => logs.push('⚠️ ' + args.map(arg => String(arg)).join(' ')),
-        info: (...args) => logs.push('ℹ️ ' + args.map(arg => String(arg)).join(' '))
-      };
-
-      try {
-        // Create a function with custom console
-        const func = new Function('console', code);
-        func(customConsole);
-
-        // Add logs to output
-        logs.forEach(log => {
-          output.push({ type: 'success', message: log });
-        });
-
-        errors.forEach(error => {
-          output.push({ type: 'error', message: error });
-        });
-
-        if (logs.length === 0 && errors.length === 0) {
-          output.push({ type: 'info', message: 'Code executed successfully (no output)' });
-        }
-      } catch (error) {
-        output.push({ type: 'error', message: `Runtime Error: ${error.message}` });
-      }
-    } else {
-      output.push({ 
-        type: 'info', 
-        message: `${language} execution is simulated in browser. In production, use a backend service for secure execution.` 
-      });
-      output.push({ 
-        type: 'success', 
-        message: 'Code syntax appears valid.' 
-      });
-    }
-  } catch (error) {
-    output.push({ type: 'error', message: `Execution Error: ${error.message}` });
-  }
-
-  return output;
-}
+export default InterviewRoom;
 
 export default InterviewRoom;
