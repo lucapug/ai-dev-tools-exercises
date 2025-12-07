@@ -196,5 +196,3 @@ function InterviewRoom() {
 }
 
 export default InterviewRoom;
-
-export default InterviewRoom;
