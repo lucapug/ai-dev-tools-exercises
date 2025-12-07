@@ -78,8 +78,12 @@ io.on('connection', (socket) => {
 
   socket.on('language-change', ({ sessionId, language }) => {
     sessionManager.updateLanguage(sessionId, language);
+    // Update code template when language changes
+    const defaultCode = sessionManager.getDefaultCode(language);
+    sessionManager.updateCode(sessionId, defaultCode);
     // Broadcast to all participants in the session
     io.to(sessionId).emit('language-update', language);
+    io.to(sessionId).emit('code-update', defaultCode);
   });
 
   socket.on('cursor-change', ({ sessionId, position }) => {

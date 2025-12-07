@@ -5,11 +5,22 @@ class SessionManager {
     this.sessions = new Map();
   }
 
+  getDefaultCode(language = 'javascript') {
+    const templates = {
+      javascript: '// Write your code here\n',
+      typescript: '// Write your code here\n',
+      python: '# Write your code here\n',
+      java: '// Write your code here\n',
+      cpp: '// Write your code here\n'
+    };
+    return templates[language] || templates.javascript;
+  }
+
   createSession() {
     const sessionId = nanoid(10);
     this.sessions.set(sessionId, {
       id: sessionId,
-      code: '// Write your code here\n',
+      code: this.getDefaultCode('javascript'),
       language: 'javascript',
       participants: new Set(),
       createdAt: Date.now()
