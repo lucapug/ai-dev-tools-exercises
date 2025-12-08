@@ -309,6 +309,67 @@ docker run -p 3000:3000 \
 - No separate frontend server needed in production
 - The container uses Node.js 18 Alpine for a smaller image size
 
+## Deploying to Render
+
+This application can be deployed to [Render](https://render.com) as a **Web Service**.
+
+### Prerequisites
+
+1. A Render account (free tier available)
+2. Your code in a Git repository (GitHub, GitLab, or Bitbucket)
+
+### Deployment Options
+
+#### Option 1: Using render.yaml (Recommended)
+
+The repository includes a [`render.yaml`](render.yaml) blueprint for automated deployment.
+
+**Important**: The `render.yaml` file is configured to work with this project in the `module-02` subdirectory using the `rootDir: module-02` directive.
+
+1. Push your code to a Git repository (the entire repository, including the `module-02` folder)
+2. Go to [Render Dashboard](https://dashboard.render.com)
+3. Click **New** → **Blueprint**
+4. Connect your repository
+5. Render will automatically detect the `render.yaml` and deploy your application from the `module-02` subdirectory
+
+#### Option 2: Manual Web Service Creation
+
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click **New** → **Web Service**
+3. Connect your repository
+4. Configure the service:
+   - **Name**: `coding-interview-platform`
+   - **Runtime**: `Node`
+   - **Root Directory**: `module-02` ⚠️ **Important: Set this to point to the subdirectory**
+   - **Build Command**: `npm run install:all && cd frontend && npm run build`
+   - **Start Command**: `node backend/server.js`
+   - **Environment Variables**:
+     - `NODE_ENV` = `production`
+
+5. Click **Create Web Service**
+
+### Post-Deployment
+
+- Your application will be available at: `https://your-app-name.onrender.com`
+- The free tier may spin down after inactivity (takes ~30 seconds to spin up)
+- WebSocket connections work automatically (no additional configuration needed)
+- Update the CORS origins in [`backend/server.js`](backend/server.js:15) if needed to include your Render URL
+
+### Environment Variables on Render
+
+Render automatically sets the `PORT` environment variable. You can add additional variables in the Render dashboard:
+
+- `NODE_ENV=production` (recommended)
+- `FRONTEND_URL` (optional, for CORS configuration)
+
+### Cost
+
+- **Free Tier**: Available for testing and small projects
+  - 750 hours/month of free usage
+  - Services spin down after 15 minutes of inactivity
+  
+- **Paid Plans**: Starting at $7/month for always-on services with more resources
+
 ## Features Implemented
 
 ✅ **Create and Share Links**: Generate unique session IDs for easy sharing
