@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: coding-interview-platform
+    runtime: node
+    plan: free
+    rootDir: module-02
+    buildCommand: npm run install:all && cd frontend && npm run build
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
