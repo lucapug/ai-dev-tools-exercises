@@ -2,13 +2,23 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import sessionManager from './sessions.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(join(__dirname, 'dist')));
+}
 
 const io = new Server(httpServer, {
   cors: {
@@ -39,6 +49,13 @@ app.get('/api/sessions/:sessionId', (req, res) => {
     participantCount: session.participants.size
   });
 });
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'index.html'));
+  });
+}
 
 // Socket.IO for real-time collaboration
 io.on('connection', (socket) => {
