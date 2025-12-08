@@ -235,6 +235,80 @@ FRONTEND_URL=http://localhost:5173
 
 > **Note**: The application will work with default values even without these environment variables.
 
+## Containerizing
+
+This application can be run in a Docker container with both backend and frontend bundled together.
+
+### Build the Docker Image
+
+From the `module-02` directory:
+
+```bash
+docker build -t coding-interview-platform .
+```
+
+### Run the Container
+
+```bash
+docker run -p 3000:3000 coding-interview-platform
+```
+
+The application will be available at http://localhost:3000
+
+### Docker Compose (Optional)
+
+For easier management, you can create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+```
+
+Then run:
+
+```bash
+docker-compose up -d
+```
+
+### Container Architecture
+
+The Docker container uses a multi-stage build process:
+
+1. **Builder Stage**:
+   - Installs all dependencies (backend + frontend)
+   - Builds the React frontend into static files
+   
+2. **Production Stage**:
+   - Copies only production dependencies for the backend
+   - Copies the built frontend files
+   - Serves both API and frontend from a single Express server on port 3000
+
+### Environment Variables
+
+You can pass environment variables when running the container:
+
+```bash
+docker run -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e PORT=3000 \
+  coding-interview-platform
+```
+
+### Notes
+
+- The frontend is built as static files and served by the Express backend in production mode
+- WebSocket connections work seamlessly through the same port (3000)
+- No separate frontend server needed in production
+- The container uses Node.js 18 Alpine for a smaller image size
+
 ## Features Implemented
 
 ✅ **Create and Share Links**: Generate unique session IDs for easy sharing
