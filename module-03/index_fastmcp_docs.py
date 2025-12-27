@@ -62,7 +62,11 @@ def main():
         results = index.search(query, boost_dict={"content": 1.0})
         for r in results[:10]:
             score = r.get("_score")
-            print(f"score={score:.3f} | {r['filename']}")
+            if isinstance(score, (int, float)):
+                score_str = f"{score:.3f}"
+            else:
+                score_str = "?"
+            print(f"score={score_str} | {r['filename']}")
 
 
 if __name__ == "__main__":
