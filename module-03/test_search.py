@@ -1,16 +1,12 @@
-import sys
 import zipfile
 from io import TextIOWrapper
 from typing import List, Dict
-
 from minsearch import Index
 
 ZIP_PATH = "fastmcp-main.zip"
 
-
 def iter_markdown_from_zip(zip_path: str) -> List[Dict[str, str]]:
     docs: List[Dict[str, str]] = []
-
     with zipfile.ZipFile(zip_path, "r") as zf:
         for info in zf.infolist():
             if info.is_dir():
@@ -19,27 +15,20 @@ def iter_markdown_from_zip(zip_path: str) -> List[Dict[str, str]]:
             lname = name.lower()
             if not (lname.endswith(".md") or lname.endswith(".mdx")):
                 continue
-
-            # Remove the first path segment: "fastmcp-main/..." -> "..."
             if "/" in name:
                 trimmed = name.split("/", 1)[1]
             else:
                 trimmed = name
-
             try:
                 with zf.open(info, "r") as fh:
                     text = TextIOWrapper(fh, encoding="utf-8", errors="ignore").read()
             except Exception:
-                # Skip files that fail to read/decode
                 continue
-
             docs.append({
                 "filename": trimmed,
                 "content": text,
             })
-
     return docs
-
 
 def build_index(docs: List[Dict[str, str]]) -> Index:
     index = Index(
@@ -49,21 +38,13 @@ def build_index(docs: List[Dict[str, str]]) -> Index:
     index.fit(docs)
     return index
 
+# Test
+docs = iter_markdown_from_zip(ZIP_PATH)
+index = build_index(docs)
 
-def main():
-    docs = iter_markdown_from_zip(ZIP_PATH)
-    print(f"Indexed {len(docs)} markdown files from {ZIP_PATH}")
-
-    # Optional quick search if a query is provided as an argument
-    if len(sys.argv) > 1:
-        query = " ".join(sys.argv[1:])
-        print(f"\nTop results for query: {query!r}\n")
-        index = build_index(docs)
-        # Limit to top 5 most relevant results
-        results = index.search(query, boost_dict={"content": 1.0})
-        for r in results[:5]:
-            print(r['filename'])
-
-
-if __name__ == "__main__":
-    main()
+for query in ["mcp server", "authentication", "tools"]:
+    results = index.search(query, boost_dict={"content": 1.0})
+    top5 = [r['filename'] for r in results[:5]]
+    print(f"Query: {query!r}")
+    print("\n".join(top5))
+    print()
